@@ -5,10 +5,18 @@ import 'jspdf-autotable';
 import type { Project, Worker, Task, Attendance } from './database';
 
 // Extend the jsPDF type to include the autoTable method
+declare global {
+  interface Window {
+    jspdf: any;
+  }
+}
+
 declare module 'jspdf' {
   interface jsPDF {
-    autoTable: (options: any) => any;
-    lastAutoTable: any;
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable: {
+      finalY: number;
+    };
   }
 }
 
