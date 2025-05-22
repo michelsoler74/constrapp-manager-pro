@@ -3,6 +3,11 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
+import Projects from '@/pages/Projects';
+import Workers from '@/pages/Workers';
+import Tasks from '@/pages/Tasks';
+import AttendancePage from '@/pages/Attendance';
+import Reports from '@/pages/Reports';
 import { db } from '@/lib/database';
 import { toast } from 'sonner';
 
@@ -44,42 +49,17 @@ const Index = () => {
   const renderSection = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigate={setActiveSection} />;
       case 'projects':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Gestión de Proyectos</h2>
-            <p>Sección en desarrollo...</p>
-          </div>
-        );
+        return <Projects />;
       case 'workers':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Gestión de Personal</h2>
-            <p>Sección en desarrollo...</p>
-          </div>
-        );
+        return <Workers />;
       case 'tasks':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Gestión de Tareas</h2>
-            <p>Sección en desarrollo...</p>
-          </div>
-        );
+        return <Tasks />;
       case 'attendance':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Control de Asistencia</h2>
-            <p>Sección en desarrollo...</p>
-          </div>
-        );
+        return <AttendancePage />;
       case 'reports':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Reportes y Análisis</h2>
-            <p>Sección en desarrollo...</p>
-          </div>
-        );
+        return <Reports />;
       case 'settings':
         return (
           <div className="p-6">
@@ -88,7 +68,7 @@ const Index = () => {
           </div>
         );
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigate={setActiveSection} />;
     }
   };
 

@@ -14,7 +14,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { db, type Project, type Worker, type Task, type Attendance } from '@/lib/database';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onNavigate?: (section: string) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -214,17 +218,26 @@ const Dashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <button 
+              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+              onClick={() => onNavigate && onNavigate('projects')}
+            >
               <Briefcase className="h-8 w-8 text-construction mb-2" />
               <h3 className="font-medium text-steel">Nuevo Proyecto</h3>
               <p className="text-sm text-gray-500">Crear un proyecto de construcción</p>
             </button>
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <button 
+              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+              onClick={() => onNavigate && onNavigate('workers')}
+            >
               <Users className="h-8 w-8 text-construction mb-2" />
               <h3 className="font-medium text-steel">Registrar Personal</h3>
               <p className="text-sm text-gray-500">Añadir nuevo trabajador</p>
             </button>
-            <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
+            <button 
+              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+              onClick={() => onNavigate && onNavigate('attendance')}
+            >
               <Clock className="h-8 w-8 text-construction mb-2" />
               <h3 className="font-medium text-steel">Marcar Asistencia</h3>
               <p className="text-sm text-gray-500">Registrar entrada/salida</p>
