@@ -100,7 +100,7 @@ const Tasks: React.FC = () => {
         projectId: data.projectId,
         title: data.title,
         description: data.description,
-        // Fix: Ensure assignedTo is always an array
+        // Ensure assignedTo is always an array
         assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo].filter(Boolean),
         status: data.status,
         priority: data.priority,
@@ -134,7 +134,7 @@ const Tasks: React.FC = () => {
       projectId: task.projectId,
       title: task.title,
       description: task.description,
-      // Fix: Ensure we're using a string for the form (it will be transformed to an array by the schema)
+      // Convert assignedTo array to string for form - schema will transform it back
       assignedTo: task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo[0] : "",
       status: task.status,
       priority: task.priority,
