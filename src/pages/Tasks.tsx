@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -133,8 +134,7 @@ const Tasks: React.FC = () => {
       projectId: task.projectId,
       title: task.title,
       description: task.description,
-      // Fix: We need to handle the assignedTo properly here by using an empty array
-      // This fixes the string vs string[] mismatch error
+      // Fix: Ensure we're using a string for the form (it will be transformed to an array by the schema)
       assignedTo: task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo[0] : "",
       status: task.status,
       priority: task.priority,

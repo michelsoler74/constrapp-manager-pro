@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -33,7 +32,7 @@ const workerSchema = z.object({
   email: z.string().email('Email inválido'),
   phone: z.string().min(1, 'Teléfono es requerido'),
   hourlyRate: z.coerce.number().positive('La tarifa debe ser positiva'),
-  skills: z.string().transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
+  skills: z.string().transform(val => typeof val === 'string' ? val.split(',').map(s => s.trim()).filter(Boolean) : []),
 });
 
 type WorkerFormValues = z.infer<typeof workerSchema>;
@@ -79,13 +78,9 @@ const Workers: React.FC = () => {
         role: data.role,
         email: data.email,
         phone: data.phone,
-        hourlyRate: data.hourlyRate, // Ensure hourlyRate is explicitly included
-        // Fix: Ensure skills is always an array by using explicit type checking
-        skills: Array.isArray(data.skills) 
-          ? data.skills 
-          : (typeof data.skills === 'string' 
-              ? data.skills.split(',').map(s => s.trim()).filter(Boolean) 
-              : []),
+        hourlyRate: data.hourlyRate,
+        // Ensure skills is always properly processed as an array
+        skills: Array.isArray(data.skills) ? data.skills : [],
         status: editing ? 
           workers.find(w => w.id === editing)?.status || 'active' : 
           'active',
@@ -119,8 +114,7 @@ const Workers: React.FC = () => {
       email: worker.email,
       phone: worker.phone,
       hourlyRate: worker.hourlyRate,
-      // Fix: Convert skills array to comma-separated string for form display
-      // This fixes the type error by ensuring we're working with a string and not a never type
+      // Fix: Convert skills array to a string for form input
       skills: Array.isArray(worker.skills) ? worker.skills.join(', ') : '',
     });
   };
