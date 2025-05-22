@@ -1,7 +1,16 @@
 
 import jsPDF from 'jspdf';
+// We need to import jspdf-autotable in a way that TypeScript understands
 import 'jspdf-autotable';
 import type { Project, Worker, Task, Attendance } from './database';
+
+// Extend the jsPDF type to include the autoTable method
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => any;
+    lastAutoTable: any;
+  }
+}
 
 export class PDFGenerator {
   private doc: jsPDF;
