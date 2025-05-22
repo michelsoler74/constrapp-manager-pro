@@ -120,6 +120,7 @@ const Workers: React.FC = () => {
       phone: worker.phone,
       hourlyRate: worker.hourlyRate,
       // Fix: Convert skills array to comma-separated string for form display
+      // This fixes the type error by ensuring we're working with a string and not a never type
       skills: Array.isArray(worker.skills) ? worker.skills.join(', ') : '',
     });
   };
