@@ -100,7 +100,7 @@ const Tasks: React.FC = () => {
         title: data.title,
         description: data.description,
         // Fix: Ensure assignedTo is always an array
-        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo],
+        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo].filter(Boolean),
         status: data.status,
         priority: data.priority,
         dueDate: data.dueDate,
@@ -133,7 +133,7 @@ const Tasks: React.FC = () => {
       projectId: task.projectId,
       title: task.title,
       description: task.description,
-      // Fix: Make sure we're passing a string, not an array
+      // Fix: Pass the first item of the array or empty string if array is empty
       assignedTo: task.assignedTo.length > 0 ? task.assignedTo[0] : '',
       status: task.status,
       priority: task.priority,

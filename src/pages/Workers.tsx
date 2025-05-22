@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -79,8 +78,12 @@ const Workers: React.FC = () => {
         role: data.role,
         email: data.email,
         phone: data.phone,
-        hourlyRate: data.hourlyRate,
-        skills: Array.isArray(data.skills) ? data.skills : data.skills.split(',').map(s => s.trim()).filter(Boolean),
+        // Fix: Ensure skills is always an array by using ternary to check data.skills type
+        skills: Array.isArray(data.skills) 
+          ? data.skills 
+          : (typeof data.skills === 'string' 
+              ? data.skills.split(',').map(s => s.trim()).filter(Boolean) 
+              : []),
         status: editing ? 
           workers.find(w => w.id === editing)?.status || 'active' : 
           'active',
@@ -114,7 +117,7 @@ const Workers: React.FC = () => {
       email: worker.email,
       phone: worker.phone,
       hourlyRate: worker.hourlyRate,
-      // Fix the skills handling to work properly
+      // Fix: Convert skills array to comma-separated string for form display
       skills: Array.isArray(worker.skills) ? worker.skills.join(', ') : '',
     });
   };
