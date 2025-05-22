@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -97,43 +96,51 @@ const Tasks: React.FC = () => {
     try {
       const taskData: Task = {
         id: editing || uuidv4(),
-        ...data,
+        projectId: data.projectId,
+        title: data.title,
+        description: data.description,
+        // Ensure assignedTo is always an array
         assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo],
+        status: data.status,
+        priority: data.priority,
+        dueDate: data.dueDate,
+        progress: data.progress,
         createdAt: editing ? 
           tasks.find(t => t.id === editing)?.createdAt || new Date().toISOString() : 
           new Date().toISOString(),
-      };
+    };
 
-      if (editing) {
-        await db.update('tasks', taskData);
-        toast.success('Tarea actualizada correctamente');
-      } else {
-        await db.add('tasks', taskData);
-        toast.success('Tarea creada correctamente');
-      }
-
-      form.reset();
-      setEditing(null);
-      await loadData();
-    } catch (error) {
-      console.error('Error guardando tarea:', error);
-      toast.error('Error al guardar la tarea');
+    if (editing) {
+      await db.update('tasks', taskData);
+      toast.success('Tarea actualizada correctamente');
+    } else {
+      await db.add('tasks', taskData);
+      toast.success('Tarea creada correctamente');
     }
-  };
 
-  const handleEdit = (task: Task) => {
-    setEditing(task.id);
-    form.reset({
-      projectId: task.projectId,
-      title: task.title,
-      description: task.description,
-      assignedTo: task.assignedTo[0] || '',
-      status: task.status,
-      priority: task.priority,
-      dueDate: new Date(task.dueDate).toISOString().split('T')[0],
-      progress: task.progress,
-    });
-  };
+    form.reset();
+    setEditing(null);
+    await loadData();
+  } catch (error) {
+    console.error('Error guardando tarea:', error);
+    toast.error('Error al guardar la tarea');
+  }
+};
+
+const handleEdit = (task: Task) => {
+  setEditing(task.id);
+  form.reset({
+    projectId: task.projectId,
+    title: task.title,
+    description: task.description,
+    // Fix this line to handle the array properly
+    assignedTo: task.assignedTo.length > 0 ? task.assignedTo[0] : '',
+    status: task.status,
+    priority: task.priority,
+    dueDate: new Date(task.dueDate).toISOString().split('T')[0],
+    progress: task.progress,
+  });
+};
 
   const handleCancelEdit = () => {
     setEditing(null);
@@ -247,33 +254,33 @@ const Tasks: React.FC = () => {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="assignedTo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Asignado a</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value[0] || field.value || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un trabajador" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {workers.map((worker) => (
-                            <SelectItem key={worker.id} value={worker.id}>
-                              {worker.name} - {worker.role}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+<FormField
+  control={form.control}
+  name="assignedTo"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Asignado a</FormLabel>
+      <Select 
+        onValueChange={field.onChange} 
+        defaultValue={Array.isArray(field.value) && field.value.length > 0 ? field.value[0] : field.value as string}
+      >
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Seleccione un trabajador" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {workers.map((worker) => (
+            <SelectItem key={worker.id} value={worker.id}>
+              {worker.name} - {worker.role}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -7,7 +6,6 @@ import {
   Card, 
   CardContent, 
   CardDescription, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
@@ -74,11 +72,17 @@ const Projects: React.FC = () => {
     }
   };
 
+  // Fix the onSubmit function to ensure all required fields are included
   const onSubmit = async (data: ProjectFormValues) => {
     try {
       const projectData: Project = {
         id: editing || uuidv4(),
-        ...data,
+        name: data.name,
+        description: data.description,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        budget: data.budget,
+        location: data.location,
         status: editing ? 
           projects.find(p => p.id === editing)?.status || 'planning' : 
           'planning',

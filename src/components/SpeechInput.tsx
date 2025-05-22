@@ -4,6 +4,12 @@ import { Button } from './ui/button';
 import { Mic, MicOff } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Define the type for the SpeechRecognition interface
+interface Window {
+  webkitSpeechRecognition: any;
+  SpeechRecognition: any;
+}
+
 interface SpeechInputProps {
   onResult: (transcript: string) => void;
   placeholder?: string;
@@ -28,8 +34,9 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     setIsListening(true);
     setError(null);
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    // Use appropriate type casting
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognitionAPI();
     
     recognition.lang = 'es-ES';
     recognition.continuous = false;
@@ -39,13 +46,13 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
       toast.info('Escuchando...');
     };
     
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       onResult(transcript);
       toast.success('Texto capturado');
     };
     
-    recognition.onerror = (event) => {
+    recognition.onerror = (event: any) => {
       setError(`Error: ${event.error}`);
       toast.error(`Error de reconocimiento: ${event.error}`);
       setIsListening(false);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -75,11 +74,15 @@ const Workers: React.FC = () => {
     try {
       const workerData: Worker = {
         id: editing || uuidv4(),
-        ...data,
+        name: data.name,
+        role: data.role,
+        email: data.email,
+        phone: data.phone,
+        hourlyRate: data.hourlyRate,
+        skills: Array.isArray(data.skills) ? data.skills : data.skills.split(',').map(s => s.trim()).filter(Boolean),
         status: editing ? 
           workers.find(w => w.id === editing)?.status || 'active' : 
           'active',
-        skills: Array.isArray(data.skills) ? data.skills : [data.skills],
         createdAt: editing ? 
           workers.find(w => w.id === editing)?.createdAt || new Date().toISOString() : 
           new Date().toISOString(),
@@ -110,6 +113,7 @@ const Workers: React.FC = () => {
       email: worker.email,
       phone: worker.phone,
       hourlyRate: worker.hourlyRate,
+      // Fix the skills handling to work with the string or array
       skills: worker.skills.join(', '),
     });
   };

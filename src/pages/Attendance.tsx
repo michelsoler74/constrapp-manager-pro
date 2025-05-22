@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -29,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, FileText, Plus, CalendarDays, Check } from 'lucide-react';
+import { Clock, FileText, Plus, CalendarDays, Check, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, type Worker, type Project, type Attendance } from '@/lib/database';
 import { v4 as uuidv4 } from 'uuid';
@@ -91,34 +90,39 @@ const AttendancePage: React.FC = () => {
     }
   };
 
-  const onSubmit = async (data: AttendanceFormValues) => {
-    try {
-      const attendanceData: Attendance = {
-        id: editing || uuidv4(),
-        ...data,
-        checkOut: data.checkOut || undefined,
-        notes: data.notes || undefined,
-        createdAt: editing ? 
-          attendance.find(a => a.id === editing)?.createdAt || new Date().toISOString() : 
-          new Date().toISOString(),
-      };
+// Fix the onSubmit function to ensure all required fields are included
+const onSubmit = async (data: AttendanceFormValues) => {
+  try {
+    const attendanceData: Attendance = {
+      id: editing || uuidv4(),
+      workerId: data.workerId,
+      projectId: data.projectId,
+      date: data.date,
+      checkIn: data.checkIn,
+      checkOut: data.checkOut || undefined,
+      hoursWorked: data.hoursWorked,
+      notes: data.notes || undefined,
+      createdAt: editing ? 
+        attendance.find(a => a.id === editing)?.createdAt || new Date().toISOString() : 
+        new Date().toISOString(),
+    };
 
-      if (editing) {
-        await db.update('attendance', attendanceData);
-        toast.success('Registro actualizado correctamente');
-      } else {
-        await db.add('attendance', attendanceData);
-        toast.success('Asistencia registrada correctamente');
-      }
-
-      form.reset();
-      setEditing(null);
-      await loadData();
-    } catch (error) {
-      console.error('Error guardando asistencia:', error);
-      toast.error('Error al guardar la asistencia');
+    if (editing) {
+      await db.update('attendance', attendanceData);
+      toast.success('Registro actualizado correctamente');
+    } else {
+      await db.add('attendance', attendanceData);
+      toast.success('Asistencia registrada correctamente');
     }
-  };
+
+    form.reset();
+    setEditing(null);
+    await loadData();
+  } catch (error) {
+    console.error('Error guardando asistencia:', error);
+    toast.error('Error al guardar la asistencia');
+  }
+};
 
   const handleEdit = (record: Attendance) => {
     setEditing(record.id);
