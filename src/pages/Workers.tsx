@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -78,7 +79,8 @@ const Workers: React.FC = () => {
         role: data.role,
         email: data.email,
         phone: data.phone,
-        // Fix: Ensure skills is always an array by using ternary to check data.skills type
+        hourlyRate: data.hourlyRate, // Ensure hourlyRate is explicitly included
+        // Fix: Ensure skills is always an array by using explicit type checking
         skills: Array.isArray(data.skills) 
           ? data.skills 
           : (typeof data.skills === 'string' 

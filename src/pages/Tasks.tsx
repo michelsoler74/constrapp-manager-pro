@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -133,8 +134,8 @@ const Tasks: React.FC = () => {
       projectId: task.projectId,
       title: task.title,
       description: task.description,
-      // Fix: Pass the first item of the array or empty string if array is empty
-      assignedTo: task.assignedTo.length > 0 ? task.assignedTo[0] : '',
+      // Fix: We need to convert the first array element to a string here
+      assignedTo: task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo[0] : '',
       status: task.status,
       priority: task.priority,
       dueDate: new Date(task.dueDate).toISOString().split('T')[0],
