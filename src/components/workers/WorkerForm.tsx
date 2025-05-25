@@ -15,10 +15,10 @@ import SpeechInput from '@/components/SpeechInput';
 
 const workerSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido'),
-  role: z.string().min(1, 'Rol es requerido'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(1, 'Teléfono es requerido'),
-  hourlyRate: z.coerce.number().positive('La tarifa debe ser positiva'),
+  role: z.string().optional().default(''),
+  email: z.string().optional().default(''),
+  phone: z.string().optional().default(''),
+  hourlyRate: z.coerce.number().optional().default(0),
   skills: z.string().optional().default(''),
 });
 
@@ -71,10 +71,10 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
       const workerData: Worker = {
         id: editing || uuidv4(),
         name: data.name,
-        role: data.role,
-        email: data.email,
-        phone: data.phone,
-        hourlyRate: data.hourlyRate,
+        role: data.role || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        hourlyRate: data.hourlyRate || 0,
         skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
         status: 'active',
         createdAt: new Date().toISOString(),
@@ -123,7 +123,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre</FormLabel>
+                  <FormLabel>Nombre *</FormLabel>
                   <FormControl>
                     <div className="flex gap-2 items-end">
                       <Input 
@@ -146,7 +146,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rol</FormLabel>
+                  <FormLabel>Rol (opcional)</FormLabel>
                   <FormControl>
                     <div className="flex gap-2 items-end">
                       <Input 
@@ -169,7 +169,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email (opcional)</FormLabel>
                   <FormControl>
                     <div className="flex gap-2 items-end">
                       <Input 
@@ -193,7 +193,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
+                  <FormLabel>Teléfono (opcional)</FormLabel>
                   <FormControl>
                     <div className="flex gap-2 items-end">
                       <Input 
@@ -216,7 +216,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
               name="hourlyRate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tarifa por hora</FormLabel>
+                  <FormLabel>Tarifa por hora (opcional)</FormLabel>
                   <FormControl>
                     <div className="flex gap-2 items-end">
                       <Input 
@@ -243,7 +243,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ editing, onSuccess, onCancel, e
               name="skills"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Habilidades (separadas por coma)</FormLabel>
+                  <FormLabel>Habilidades (opcional, separadas por coma)</FormLabel>
                   <FormControl>
                     <div className="flex gap-2 items-end">
                       <Input 
