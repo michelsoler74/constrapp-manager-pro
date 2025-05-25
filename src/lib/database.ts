@@ -4,7 +4,7 @@ export interface Project {
   description: string;
   startDate: string;
   endDate: string;
-  status: 'planning' | 'active' | 'completed' | 'paused';
+  status: "planning" | "active" | "completed" | "paused";
   budget: number;
   progress: number;
   location: string;
@@ -30,7 +30,7 @@ export interface Worker {
   hourlyRate: number;
   photo?: string;
   skills: string[];
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   createdAt: string;
 }
 
@@ -40,11 +40,12 @@ export interface Task {
   title: string;
   description: string;
   assignedTo: string[];
-  status: 'pending' | 'in-progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
+  status: "pending" | "in-progress" | "completed";
+  priority: "low" | "medium" | "high";
   dueDate: string;
   progress: number;
   createdAt: string;
+  materials?: Material[];
 }
 
 export interface Attendance {
@@ -60,7 +61,7 @@ export interface Attendance {
 }
 
 class DatabaseManager {
-  private dbName = 'ConstrAPP';
+  private dbName = "ConstrAPP";
   private version = 1;
   private db: IDBDatabase | null = null;
 
@@ -78,30 +79,40 @@ class DatabaseManager {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Projects store
-        if (!db.objectStoreNames.contains('projects')) {
-          const projectStore = db.createObjectStore('projects', { keyPath: 'id' });
-          projectStore.createIndex('status', 'status', { unique: false });
+        if (!db.objectStoreNames.contains("projects")) {
+          const projectStore = db.createObjectStore("projects", {
+            keyPath: "id",
+          });
+          projectStore.createIndex("status", "status", { unique: false });
         }
 
         // Workers store
-        if (!db.objectStoreNames.contains('workers')) {
-          const workerStore = db.createObjectStore('workers', { keyPath: 'id' });
-          workerStore.createIndex('status', 'status', { unique: false });
+        if (!db.objectStoreNames.contains("workers")) {
+          const workerStore = db.createObjectStore("workers", {
+            keyPath: "id",
+          });
+          workerStore.createIndex("status", "status", { unique: false });
         }
 
         // Tasks store
-        if (!db.objectStoreNames.contains('tasks')) {
-          const taskStore = db.createObjectStore('tasks', { keyPath: 'id' });
-          taskStore.createIndex('projectId', 'projectId', { unique: false });
-          taskStore.createIndex('status', 'status', { unique: false });
+        if (!db.objectStoreNames.contains("tasks")) {
+          const taskStore = db.createObjectStore("tasks", { keyPath: "id" });
+          taskStore.createIndex("projectId", "projectId", { unique: false });
+          taskStore.createIndex("status", "status", { unique: false });
         }
 
         // Attendance store
-        if (!db.objectStoreNames.contains('attendance')) {
-          const attendanceStore = db.createObjectStore('attendance', { keyPath: 'id' });
-          attendanceStore.createIndex('workerId', 'workerId', { unique: false });
-          attendanceStore.createIndex('projectId', 'projectId', { unique: false });
-          attendanceStore.createIndex('date', 'date', { unique: false });
+        if (!db.objectStoreNames.contains("attendance")) {
+          const attendanceStore = db.createObjectStore("attendance", {
+            keyPath: "id",
+          });
+          attendanceStore.createIndex("workerId", "workerId", {
+            unique: false,
+          });
+          attendanceStore.createIndex("projectId", "projectId", {
+            unique: false,
+          });
+          attendanceStore.createIndex("date", "date", { unique: false });
         }
       };
     });
@@ -110,11 +121,11 @@ class DatabaseManager {
   async add<T>(storeName: string, data: T): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction([storeName], 'readwrite');
+      const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);
       const request = store.add(data);
 
@@ -126,11 +137,11 @@ class DatabaseManager {
   async update<T>(storeName: string, data: T): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction([storeName], 'readwrite');
+      const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);
       const request = store.put(data);
 
@@ -142,11 +153,11 @@ class DatabaseManager {
   async delete(storeName: string, id: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction([storeName], 'readwrite');
+      const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);
       const request = store.delete(id);
 
@@ -158,11 +169,11 @@ class DatabaseManager {
   async getAll<T>(storeName: string): Promise<T[]> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction([storeName], 'readonly');
+      const transaction = this.db.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
       const request = store.getAll();
 
@@ -174,11 +185,11 @@ class DatabaseManager {
   async getById<T>(storeName: string, id: string): Promise<T | null> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction([storeName], 'readonly');
+      const transaction = this.db.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
       const request = store.get(id);
 
@@ -187,14 +198,18 @@ class DatabaseManager {
     });
   }
 
-  async getByIndex<T>(storeName: string, indexName: string, value: any): Promise<T[]> {
+  async getByIndex<T>(
+    storeName: string,
+    indexName: string,
+    value: any
+  ): Promise<T[]> {
     return new Promise((resolve, reject) => {
       if (!this.db) {
-        reject(new Error('Database not initialized'));
+        reject(new Error("Database not initialized"));
         return;
       }
 
-      const transaction = this.db.transaction([storeName], 'readonly');
+      const transaction = this.db.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
       const index = store.index(indexName);
       const request = index.getAll(value);

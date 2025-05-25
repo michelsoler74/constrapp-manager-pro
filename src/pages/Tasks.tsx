@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
+import React, { useState, useEffect } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -27,21 +27,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckSquare, Edit, Plus } from 'lucide-react';
-import { toast } from 'sonner';
-import { db, type Task, type Project, type Worker } from '@/lib/database';
-import { v4 as uuidv4 } from 'uuid';
-import SpeechInput from '@/components/SpeechInput';
+import { CheckSquare, Edit, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { db, type Task, type Project, type Worker } from "@/lib/database";
+import { v4 as uuidv4 } from "uuid";
+import SpeechInput from "@/components/SpeechInput";
 import { Progress } from "@/components/ui/progress";
+import MaterialsForm, { type Material } from "@/components/MaterialsForm";
 
 const taskSchema = z.object({
-  projectId: z.string().min(1, 'Proyecto es requerido'),
-  title: z.string().min(1, 'Título de la tarea es requerido'),
-  description: z.string().min(1, 'Descripción es requerida'),
-  assignedTo: z.string().optional().default(''),
-  status: z.enum(['pending', 'in-progress', 'completed']),
-  priority: z.enum(['low', 'medium', 'high']),
-  dueDate: z.string().min(1, 'Fecha límite es requerida'),
+  projectId: z.string().min(1, "Proyecto es requerido"),
+  title: z.string().min(1, "Título de la tarea es requerido"),
+  description: z.string().min(1, "Descripción es requerida"),
+  assignedTo: z.array(z.string()).optional().default([]),
+  status: z.enum(["pending", "in-progress", "completed"]),
+  priority: z.enum(["low", "medium", "high"]),
+  dueDate: z.string().min(1, "Fecha límite es requerida"),
   progress: z.coerce.number().min(0).max(100),
 });
 
@@ -53,19 +54,20 @@ const Tasks: React.FC = () => {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
+  const [taskMaterials, setTaskMaterials] = useState<Material[]>([]);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      projectId: '',
-      title: '',
-      description: '',
-      assignedTo: '',
-      status: 'pending',
-      priority: 'medium',
-      dueDate: new Date().toISOString().split('T')[0],
+      projectId: "",
+      title: "",
+      description: "",
+      assignedTo: [],
+      status: "pending",
+      priority: "medium",
+      dueDate: new Date().toISOString().split("T")[0],
       progress: 0,
-    }
+    },
   });
 
   useEffect(() => {
@@ -75,17 +77,17 @@ const Tasks: React.FC = () => {
   const loadData = async () => {
     try {
       const [tasksData, projectsData, workersData] = await Promise.all([
-        db.getAll<Task>('tasks'),
-        db.getAll<Project>('projects'),
-        db.getAll<Worker>('workers')
+        db.getAll<Task>("tasks"),
+        db.getAll<Project>("projects"),
+        db.getAll<Worker>("workers"),
       ]);
-      
+
       setTasks(tasksData);
       setProjects(projectsData);
       setWorkers(workersData);
     } catch (error) {
-      console.error('Error cargando datos:', error);
-      toast.error('Error al cargar los datos');
+      console.error("Error cargando datos:", error);
+      toast.error("Error al cargar los datos");
     } finally {
       setLoading(false);
     }
@@ -98,56 +100,78 @@ const Tasks: React.FC = () => {
         projectId: data.projectId,
         title: data.title,
         description: data.description,
-        assignedTo: data.assignedTo ? [data.assignedTo] : [],
+        assignedTo: data.assignedTo || [],
         status: data.status,
         priority: data.priority,
         dueDate: data.dueDate,
         progress: data.progress,
-        createdAt: editing ? 
-          tasks.find(t => t.id === editing)?.createdAt || new Date().toISOString() : 
-          new Date().toISOString(),
+        createdAt: editing
+          ? tasks.find((t) => t.id === editing)?.createdAt ||
+            new Date().toISOString()
+          : new Date().toISOString(),
+        materials: taskMaterials,
       };
 
       if (editing) {
-        await db.update('tasks', taskData);
-        toast.success('Tarea actualizada correctamente');
+        await db.update("tasks", taskData);
+        toast.success("Tarea actualizada correctamente");
       } else {
-        await db.add('tasks', taskData);
-        toast.success('Tarea creada correctamente');
+        await db.add("tasks", taskData);
+        toast.success("Tarea creada correctamente");
       }
 
       form.reset();
       setEditing(null);
+      setTaskMaterials([]);
       await loadData();
     } catch (error) {
-      console.error('Error guardando tarea:', error);
-      toast.error('Error al guardar la tarea');
+      console.error("Error guardando tarea:", error);
+      toast.error("Error al guardar la tarea");
     }
   };
 
   const handleEdit = (task: Task) => {
     setEditing(task.id);
+    setTaskMaterials(task.materials || []);
     form.reset({
       projectId: task.projectId,
       title: task.title,
       description: task.description,
-      assignedTo: task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo[0] : '',
+      assignedTo: task.assignedTo || [],
       status: task.status,
       priority: task.priority,
-      dueDate: new Date(task.dueDate).toISOString().split('T')[0],
+      dueDate: new Date(task.dueDate).toISOString().split("T")[0],
       progress: task.progress,
     });
   };
 
   const handleCancelEdit = () => {
     setEditing(null);
+    setTaskMaterials([]);
     form.reset();
   };
 
-  const handleVoiceInput = (field: keyof TaskFormValues, transcript: string) => {
+  const handleVoiceInput = (
+    field: keyof TaskFormValues,
+    transcript: string
+  ) => {
     const currentValue = form.getValues(field);
-    const newValue = currentValue ? `${currentValue} ${transcript}` : transcript;
+    const newValue = currentValue
+      ? `${currentValue} ${transcript}`
+      : transcript;
     form.setValue(field, newValue);
+  };
+
+  const handleDelete = async (taskId: string) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
+      try {
+        await db.delete("tasks", taskId);
+        toast.success("Tarea eliminada correctamente");
+        await loadData();
+      } catch (error) {
+        toast.error("Error al eliminar la tarea");
+      }
+    }
   };
 
   if (loading) {
@@ -167,25 +191,28 @@ const Tasks: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckSquare className="h-5 w-5 text-construction" />
-              {editing ? 'Editar Tarea' : 'Nueva Tarea'}
+              {editing ? "Editar Tarea" : "Nueva Tarea"}
             </CardTitle>
             <CardDescription>
-              {editing 
-                ? 'Actualiza la información de la tarea' 
-                : 'Crea una nueva tarea para un proyecto'}
+              {editing
+                ? "Actualiza la información de la tarea"
+                : "Crea una nueva tarea para un proyecto"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="projectId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Proyecto</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         value={field.value}
                       >
                         <FormControl>
@@ -205,7 +232,7 @@ const Tasks: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="title"
@@ -214,13 +241,15 @@ const Tasks: React.FC = () => {
                       <FormLabel>Título de la Tarea</FormLabel>
                       <FormControl>
                         <div className="flex gap-2 items-end">
-                          <Input 
-                            placeholder="Título" 
-                            {...field} 
+                          <Input
+                            placeholder="Título"
+                            {...field}
                             className="flex-1"
                           />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('title', transcript)}
+                          <SpeechInput
+                            onResult={(transcript) =>
+                              handleVoiceInput("title", transcript)
+                            }
                           />
                         </div>
                       </FormControl>
@@ -237,13 +266,15 @@ const Tasks: React.FC = () => {
                       <FormLabel>Descripción</FormLabel>
                       <FormControl>
                         <div className="space-y-2">
-                          <Textarea 
-                            placeholder="Descripción de la tarea" 
-                            {...field} 
+                          <Textarea
+                            placeholder="Descripción de la tarea"
+                            {...field}
                           />
                           <div className="flex justify-end">
-                            <SpeechInput 
-                              onResult={(transcript) => handleVoiceInput('description', transcript)}
+                            <SpeechInput
+                              onResult={(transcript) =>
+                                handleVoiceInput("description", transcript)
+                              }
                               placeholder="Dictar descripción"
                             />
                           </div>
@@ -260,30 +291,36 @@ const Tasks: React.FC = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Asignado a</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un trabajador" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      <FormControl>
+                        <select
+                          multiple
+                          className="w-full border rounded p-2"
+                          value={field.value}
+                          onChange={(e) => {
+                            const selected = Array.from(
+                              e.target.selectedOptions,
+                              (option) => option.value
+                            );
+                            field.onChange(selected);
+                          }}
+                        >
                           {workers.map((worker) => (
-                            <SelectItem key={worker.id} value={worker.id}>
+                            <option key={worker.id} value={worker.id}>
                               {worker.name} - {worker.role}
-                            </SelectItem>
+                            </option>
                           ))}
-                        </SelectContent>
-                      </Select>
+                        </select>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                
-                
+                <MaterialsForm
+                  materials={taskMaterials}
+                  onMaterialsChange={setTaskMaterials}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -291,8 +328,8 @@ const Tasks: React.FC = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value}
                         >
                           <FormControl>
@@ -302,8 +339,12 @@ const Tasks: React.FC = () => {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="pending">Pendiente</SelectItem>
-                            <SelectItem value="in-progress">En Progreso</SelectItem>
-                            <SelectItem value="completed">Completada</SelectItem>
+                            <SelectItem value="in-progress">
+                              En Progreso
+                            </SelectItem>
+                            <SelectItem value="completed">
+                              Completada
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -316,8 +357,8 @@ const Tasks: React.FC = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Prioridad</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value}
                         >
                           <FormControl>
@@ -358,13 +399,15 @@ const Tasks: React.FC = () => {
                       <FormItem>
                         <FormLabel>Progreso ({field.value}%)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="range" 
-                            min="0" 
-                            max="100" 
+                          <Input
+                            type="range"
+                            min="0"
+                            max="100"
                             step="5"
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value))
+                            }
                             className="w-full"
                           />
                         </FormControl>
@@ -373,22 +416,22 @@ const Tasks: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
                 <div className="flex gap-2 justify-end">
                   {editing && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={handleCancelEdit}
                     >
                       Cancelar
                     </Button>
                   )}
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="construction-gradient text-white"
                   >
-                    {editing ? 'Actualizar Tarea' : 'Crear Tarea'}
+                    {editing ? "Actualizar Tarea" : "Crear Tarea"}
                   </Button>
                 </div>
               </form>
@@ -396,8 +439,6 @@ const Tasks: React.FC = () => {
           </CardContent>
         </Card>
 
-        
-        
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -409,18 +450,16 @@ const Tasks: React.FC = () => {
                 {tasks.length} tareas
               </span>
             </CardTitle>
-            <CardDescription>
-              Lista de tareas de los proyectos
-            </CardDescription>
+            <CardDescription>Lista de tareas de los proyectos</CardDescription>
           </CardHeader>
           <CardContent>
             {tasks.length === 0 ? (
               <div className="text-center py-8">
                 <CheckSquare className="h-12 w-12 mx-auto text-gray-300 mb-2" />
                 <p className="text-gray-500">No hay tareas registradas</p>
-                <Button 
+                <Button
                   className="mt-4 construction-gradient text-white"
-                  onClick={() => form.setFocus('title')}
+                  onClick={() => form.setFocus("title")}
                 >
                   <Plus className="h-4 w-4 mr-2" /> Crear primera tarea
                 </Button>
@@ -428,41 +467,61 @@ const Tasks: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {tasks.map((task) => {
-                  const project = projects.find(p => p.id === task.projectId);
-                  const assignedWorkers = workers.filter(w => task.assignedTo.includes(w.id));
-                  
+                  const project = projects.find((p) => p.id === task.projectId);
+                  const assignedWorkers = workers.filter((w) =>
+                    task.assignedTo.includes(w.id)
+                  );
+
                   return (
-                    <div 
-                      key={task.id} 
+                    <div
+                      key={task.id}
                       className="border rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-semibold text-steel">{task.title}</h3>
-                          <p className="text-sm text-construction">{project?.name}</p>
+                          <h3 className="font-semibold text-steel">
+                            {task.title}
+                          </h3>
+                          <p className="text-sm text-construction">
+                            {project?.name}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {task.priority === 'high' ? 'Alta' : 
-                             task.priority === 'medium' ? 'Media' : 'Baja'}
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              task.priority === "high"
+                                ? "bg-red-100 text-red-800"
+                                : task.priority === "medium"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {task.priority === "high"
+                              ? "Alta"
+                              : task.priority === "medium"
+                              ? "Media"
+                              : "Baja"}
                           </span>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handleEdit(task)}
                           >
                             <Edit className="h-4 w-4 text-construction" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(task.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 line-clamp-2 mb-2">
                         {task.description}
                       </p>
-                      
+
                       <div className="mt-2 mb-3">
                         <div className="flex justify-between text-xs mb-1">
                           <span>Progreso</span>
@@ -470,29 +529,50 @@ const Tasks: React.FC = () => {
                         </div>
                         <Progress value={task.progress} className="h-2" />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-2 text-xs mt-4">
                         <div>
                           <span className="text-gray-500">Estado: </span>
-                          <span className={`px-2 py-0.5 rounded-full ${
-                            task.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            task.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {task.status === 'completed' ? 'Completada' : 
-                             task.status === 'in-progress' ? 'En progreso' : 'Pendiente'}
+                          <span
+                            className={`px-2 py-0.5 rounded-full ${
+                              task.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : task.status === "in-progress"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {task.status === "completed"
+                              ? "Completada"
+                              : task.status === "in-progress"
+                              ? "En progreso"
+                              : "Pendiente"}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500">Fecha límite: </span>
-                          {new Date(task.dueDate).toLocaleDateString('es-ES')}
+                          {new Date(task.dueDate).toLocaleDateString("es-ES")}
                         </div>
                       </div>
-                      
+
                       {assignedWorkers.length > 0 && (
                         <div className="mt-2 text-xs">
                           <span className="text-gray-500">Asignado a: </span>
-                          {assignedWorkers.map(w => w.name).join(', ')}
+                          {assignedWorkers.map((w) => w.name).join(", ")}
+                        </div>
+                      )}
+
+                      {task.materials && task.materials.length > 0 && (
+                        <div className="mt-2 text-xs">
+                          <span className="font-medium">Materiales:</span>
+                          <ul className="list-disc ml-5">
+                            {task.materials.map((material) => (
+                              <li key={material.id}>
+                                {material.name} ({material.quantity}{" "}
+                                {material.unit})
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                     </div>
