@@ -1,64 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { User, Edit, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, type Worker } from '@/lib/database';
-import { v4 as uuidv4 } from 'uuid';
-import SpeechInput from '@/components/SpeechInput';
-
-const workerSchema = z.object({
-  name: z.string().min(1, 'Nombre es requerido'),
-  role: z.string().min(1, 'Rol es requerido'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(1, 'Teléfono es requerido'),
-  hourlyRate: z.coerce.number().positive('La tarifa debe ser positiva'),
-  skills: z.string().optional().default(''),
-});
-
-type WorkerFormValues = z.infer<typeof workerSchema>;
+import WorkerForm from '@/components/workers/WorkerForm';
+import WorkerList from '@/components/workers/WorkerList';
 
 const Workers: React.FC = () => {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
-
-  const form = useForm<WorkerFormValues>({
-    resolver: zodResolver(workerSchema),
-    defaultValues: {
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      hourlyRate: 0,
-      skills: '',
-    }
-  });
+  const [editingWorker, setEditingWorker] = useState<Worker | undefined>(undefined);
 
   useEffect(() => {
     loadData();
@@ -76,58 +27,25 @@ const Workers: React.FC = () => {
     }
   };
 
-  const onSubmit = async (data: WorkerFormValues) => {
-    try {
-      const workerData: Worker = {
-        id: editing || uuidv4(),
-        name: data.name,
-        role: data.role,
-        email: data.email,
-        phone: data.phone,
-        hourlyRate: data.hourlyRate,
-        skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
-        status: 'active',
-        createdAt: new Date().toISOString(),
-      };
-
-      if (editing) {
-        await db.update('workers', workerData);
-        toast.success('Trabajador actualizado correctamente');
-      } else {
-        await db.add('workers', workerData);
-        toast.success('Trabajador creado correctamente');
-      }
-
-      form.reset();
-      setEditing(null);
-      await loadData();
-    } catch (error) {
-      console.error('Error guardando trabajador:', error);
-      toast.error('Error al guardar el trabajador');
-    }
-  };
-
   const handleEdit = (worker: Worker) => {
     setEditing(worker.id);
-    form.reset({
-      name: worker.name,
-      role: worker.role,
-      email: worker.email,
-      phone: worker.phone,
-      hourlyRate: worker.hourlyRate,
-      skills: Array.isArray(worker.skills) ? worker.skills.join(', ') : '',
-    });
+    setEditingWorker(worker);
   };
 
   const handleCancelEdit = () => {
     setEditing(null);
-    form.reset();
+    setEditingWorker(undefined);
   };
 
-  const handleVoiceInput = (field: keyof WorkerFormValues, transcript: string) => {
-    const currentValue = form.getValues(field);
-    const newValue = currentValue ? `${currentValue} ${transcript}` : transcript;
-    form.setValue(field, newValue);
+  const handleSuccess = async () => {
+    setEditing(null);
+    setEditingWorker(undefined);
+    await loadData();
+  };
+
+  const handleCreateFirst = () => {
+    // Focus on the form by scrolling to it or other UX improvement
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) {
@@ -143,257 +61,20 @@ const Workers: React.FC = () => {
       <h2 className="text-2xl font-bold mb-6 text-steel">Gestión de Trabajadores</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-construction" />
-              {editing ? 'Editar Trabajador' : 'Nuevo Trabajador'}
-            </CardTitle>
-            <CardDescription>
-              {editing 
-                ? 'Actualiza la información del trabajador' 
-                : 'Crea un nuevo trabajador'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-end">
-                          <Input 
-                            placeholder="Nombre" 
-                            {...field} 
-                            className="flex-1"
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('name', transcript)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rol</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-end">
-                          <Input 
-                            placeholder="Rol" 
-                            {...field} 
-                            className="flex-1"
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('role', transcript)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-end">
-                          <Input 
-                            type="email" 
-                            placeholder="Email" 
-                            {...field} 
-                            className="flex-1"
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('email', transcript)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teléfono</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-end">
-                          <Input 
-                            placeholder="Teléfono" 
-                            {...field} 
-                            className="flex-1"
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('phone', transcript)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="hourlyRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tarifa por hora</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-end">
-                          <Input 
-                            type="number" 
-                            placeholder="Tarifa por hora" 
-                            {...field} 
-                            className="flex-1"
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => {
-                              const numericValue = transcript.replace(/[^0-9.,]/g, '');
-                              handleVoiceInput('hourlyRate', numericValue);
-                            }}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="skills"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Habilidades (separadas por coma)</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-end">
-                          <Input 
-                            placeholder="Habilidades" 
-                            {...field} 
-                            className="flex-1"
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('skills', transcript)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex gap-2 justify-end">
-                  {editing && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleCancelEdit}
-                    >
-                      Cancelar
-                    </Button>
-                  )}
-                  <Button 
-                    type="submit" 
-                    className="construction-gradient text-white"
-                  >
-                    {editing ? 'Actualizar Trabajador' : 'Crear Trabajador'}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
+        <div className="lg:col-span-1">
+          <WorkerForm
+            editing={editing}
+            editingWorker={editingWorker}
+            onSuccess={handleSuccess}
+            onCancel={handleCancelEdit}
+          />
+        </div>
         
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-construction" />
-                <span>Trabajadores</span>
-              </div>
-              <span className="text-sm bg-gray-100 px-2 py-1 rounded-full">
-                {workers.length} trabajadores
-              </span>
-            </CardTitle>
-            <CardDescription>
-              Lista de trabajadores
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {workers.length === 0 ? (
-              <div className="text-center py-8">
-                <User className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-500">No hay trabajadores registrados</p>
-                <Button 
-                  className="mt-4 construction-gradient text-white"
-                  onClick={() => form.setFocus('name')}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Crear primer trabajador
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {workers.map((worker) => (
-                  <div 
-                    key={worker.id} 
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-steel">{worker.name}</h3>
-                        <p className="text-sm text-construction">{worker.role}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => handleEdit(worker)}
-                        >
-                          <Edit className="h-4 w-4 text-construction" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Email: {worker.email}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Teléfono: {worker.phone}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Tarifa por hora: {worker.hourlyRate}
-                    </p>
-                    {worker.skills && worker.skills.length > 0 && (
-                      <div className="mt-2 text-xs">
-                        <span className="text-gray-500">Habilidades: </span>
-                        {worker.skills.join(', ')}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <WorkerList
+          workers={workers}
+          onEdit={handleEdit}
+          onCreateFirst={handleCreateFirst}
+        />
       </div>
     </div>
   );
