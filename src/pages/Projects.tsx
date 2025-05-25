@@ -33,7 +33,7 @@ const projectSchema = z.object({
   description: z.string().min(1, 'Descripción es requerida'),
   startDate: z.string().min(1, 'Fecha de inicio es requerida'),
   endDate: z.string().min(1, 'Fecha de fin es requerida'),
-  budget: z.coerce.number().positive('El presupuesto debe ser positivo'),
+  budget: z.coerce.number().min(0).optional().or(z.literal('')),
   location: z.string().min(1, 'Ubicación es requerida'),
 });
 
@@ -51,7 +51,7 @@ const Projects: React.FC = () => {
       description: '',
       startDate: new Date().toISOString().split('T')[0],
       endDate: '',
-      budget: 0,
+      budget: '',
       location: '',
     }
   });
@@ -81,7 +81,7 @@ const Projects: React.FC = () => {
         description: data.description,
         startDate: data.startDate,
         endDate: data.endDate,
-        budget: data.budget,
+        budget: data.budget ? Number(data.budget) : 0,
         location: data.location,
         status: editing ? 
           projects.find(p => p.id === editing)?.status || 'planning' : 
@@ -118,7 +118,7 @@ const Projects: React.FC = () => {
       description: project.description,
       startDate: new Date(project.startDate).toISOString().split('T')[0],
       endDate: new Date(project.endDate).toISOString().split('T')[0],
-      budget: project.budget,
+      budget: project.budget || '',
       location: project.location,
     });
   };
@@ -278,7 +278,7 @@ const Projects: React.FC = () => {
                     name="budget"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Presupuesto</FormLabel>
+                        <FormLabel>Presupuesto (opcional)</FormLabel>
                         <FormControl>
                           <div className="flex gap-2 items-center">
                             <Input 
