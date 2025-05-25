@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -9,7 +8,17 @@ export interface Project {
   budget: number;
   progress: number;
   location: string;
+  materials?: Material[];
   createdAt: string;
+}
+
+export interface Material {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  cost?: number;
+  supplier?: string;
 }
 
 export interface Worker {

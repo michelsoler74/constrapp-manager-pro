@@ -27,6 +27,7 @@ import { db, type Project } from '@/lib/database';
 import { v4 as uuidv4 } from 'uuid';
 import SpeechInput from '@/components/SpeechInput';
 import { pdfGenerator } from '@/lib/pdf-generator';
+import MaterialsForm, { type Material } from '@/components/MaterialsForm';
 
 const projectSchema = z.object({
   name: z.string().min(1, 'Nombre del proyecto es requerido'),
@@ -43,6 +44,7 @@ const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
+  const [materials, setMaterials] = useState<Material[]>([]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -72,7 +74,6 @@ const Projects: React.FC = () => {
     }
   };
 
-  // Fix the onSubmit function to ensure all required fields are included
   const onSubmit = async (data: ProjectFormValues) => {
     try {
       const projectData: Project = {
@@ -83,6 +84,7 @@ const Projects: React.FC = () => {
         endDate: data.endDate,
         budget: data.budget ? Number(data.budget) : 0,
         location: data.location,
+        materials: materials,
         status: editing ? 
           projects.find(p => p.id === editing)?.status || 'planning' : 
           'planning',
@@ -104,6 +106,7 @@ const Projects: React.FC = () => {
 
       form.reset();
       setEditing(null);
+      setMaterials([]);
       await loadProjects();
     } catch (error) {
       console.error('Error guardando proyecto:', error);
@@ -113,6 +116,7 @@ const Projects: React.FC = () => {
 
   const handleEdit = (project: Project) => {
     setEditing(project.id);
+    setMaterials(project.materials || []);
     form.reset({
       name: project.name,
       description: project.description,
@@ -125,6 +129,7 @@ const Projects: React.FC = () => {
 
   const handleCancelEdit = () => {
     setEditing(null);
+    setMaterials([]);
     form.reset();
   };
 
@@ -180,8 +185,8 @@ const Projects: React.FC = () => {
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 text-steel">Gestión de Proyectos</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-construction" />
@@ -195,29 +200,53 @@ const Projects: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre del Proyecto</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 items-center">
-                          <Input 
-                            placeholder="Nombre del proyecto" 
-                            {...field} 
-                          />
-                          <SpeechInput 
-                            onResult={(transcript) => handleVoiceInput('name', transcript)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre del Proyecto</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2 items-center">
+                            <Input 
+                              placeholder="Nombre del proyecto" 
+                              {...field} 
+                            />
+                            <SpeechInput 
+                              onResult={(transcript) => handleVoiceInput('name', transcript)}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ubicación</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2 items-center">
+                            <Input 
+                              placeholder="Ubicación" 
+                              {...field} 
+                            />
+                            <SpeechInput 
+                              onResult={(transcript) => handleVoiceInput('location', transcript)}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -243,7 +272,7 @@ const Projects: React.FC = () => {
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="startDate"
@@ -270,9 +299,6 @@ const Projects: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="budget"
@@ -298,28 +324,12 @@ const Projects: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ubicación</FormLabel>
-                        <FormControl>
-                          <div className="flex gap-2 items-center">
-                            <Input 
-                              placeholder="Ubicación" 
-                              {...field} 
-                            />
-                            <SpeechInput 
-                              onResult={(transcript) => handleVoiceInput('location', transcript)}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+
+                <MaterialsForm 
+                  materials={materials}
+                  onMaterialsChange={setMaterials}
+                />
                 
                 <div className="flex gap-2 justify-end">
                   {editing && (
@@ -343,7 +353,7 @@ const Projects: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -399,7 +409,7 @@ const Projects: React.FC = () => {
                     <p className="text-sm text-gray-600 line-clamp-2 mb-2">
                       {project.description}
                     </p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                       <div>
                         <span className="text-gray-500">Inicio: </span>
                         {new Date(project.startDate).toLocaleDateString('es-ES')}
@@ -420,6 +430,19 @@ const Projects: React.FC = () => {
                         })}
                       </div>
                     </div>
+                    {project.materials && project.materials.length > 0 && (
+                      <div className="mt-3 pt-3 border-t">
+                        <span className="text-sm font-medium text-gray-700">Materiales: </span>
+                        <div className="mt-1 text-xs text-gray-600">
+                          {project.materials.map((material, index) => (
+                            <span key={material.id}>
+                              {material.name} ({material.quantity} {material.unit})
+                              {index < project.materials!.length - 1 ? ', ' : ''}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
