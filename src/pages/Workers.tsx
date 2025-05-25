@@ -30,15 +30,15 @@ import { User, Edit, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, type Worker } from '@/lib/database';
 import { v4 as uuidv4 } from 'uuid';
+import SpeechInput from '@/components/SpeechInput';
 
-// Worker schema
 const workerSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido'),
   role: z.string().min(1, 'Rol es requerido'),
   email: z.string().email('Email inválido'),
   phone: z.string().min(1, 'Teléfono es requerido'),
   hourlyRate: z.coerce.number().positive('La tarifa debe ser positiva'),
-  skills: z.string().transform(val => typeof val === 'string' ? val.split(',').map(s => s.trim()).filter(Boolean) : []),
+  skills: z.string().optional().default(''),
 });
 
 type WorkerFormValues = z.infer<typeof workerSchema>;
@@ -85,8 +85,8 @@ const Workers: React.FC = () => {
         email: data.email,
         phone: data.phone,
         hourlyRate: data.hourlyRate,
-        skills: typeof data.skills === 'string' ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : data.skills,
-        status: 'active', // Default status
+        skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : [],
+        status: 'active',
         createdAt: new Date().toISOString(),
       };
 
@@ -115,7 +115,6 @@ const Workers: React.FC = () => {
       email: worker.email,
       phone: worker.phone,
       hourlyRate: worker.hourlyRate,
-      // Convert skills array to a string for the form input
       skills: Array.isArray(worker.skills) ? worker.skills.join(', ') : '',
     });
   };
@@ -123,6 +122,12 @@ const Workers: React.FC = () => {
   const handleCancelEdit = () => {
     setEditing(null);
     form.reset();
+  };
+
+  const handleVoiceInput = (field: keyof WorkerFormValues, transcript: string) => {
+    const currentValue = form.getValues(field);
+    const newValue = currentValue ? `${currentValue} ${transcript}` : transcript;
+    form.setValue(field, newValue);
   };
 
   if (loading) {
@@ -160,7 +165,16 @@ const Workers: React.FC = () => {
                     <FormItem>
                       <FormLabel>Nombre</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombre" {...field} />
+                        <div className="flex gap-2 items-end">
+                          <Input 
+                            placeholder="Nombre" 
+                            {...field} 
+                            className="flex-1"
+                          />
+                          <SpeechInput 
+                            onResult={(transcript) => handleVoiceInput('name', transcript)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,7 +188,16 @@ const Workers: React.FC = () => {
                     <FormItem>
                       <FormLabel>Rol</FormLabel>
                       <FormControl>
-                        <Input placeholder="Rol" {...field} />
+                        <div className="flex gap-2 items-end">
+                          <Input 
+                            placeholder="Rol" 
+                            {...field} 
+                            className="flex-1"
+                          />
+                          <SpeechInput 
+                            onResult={(transcript) => handleVoiceInput('role', transcript)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -188,7 +211,17 @@ const Workers: React.FC = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Email" {...field} />
+                        <div className="flex gap-2 items-end">
+                          <Input 
+                            type="email" 
+                            placeholder="Email" 
+                            {...field} 
+                            className="flex-1"
+                          />
+                          <SpeechInput 
+                            onResult={(transcript) => handleVoiceInput('email', transcript)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -202,7 +235,16 @@ const Workers: React.FC = () => {
                     <FormItem>
                       <FormLabel>Teléfono</FormLabel>
                       <FormControl>
-                        <Input placeholder="Teléfono" {...field} />
+                        <div className="flex gap-2 items-end">
+                          <Input 
+                            placeholder="Teléfono" 
+                            {...field} 
+                            className="flex-1"
+                          />
+                          <SpeechInput 
+                            onResult={(transcript) => handleVoiceInput('phone', transcript)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -216,7 +258,20 @@ const Workers: React.FC = () => {
                     <FormItem>
                       <FormLabel>Tarifa por hora</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Tarifa por hora" {...field} />
+                        <div className="flex gap-2 items-end">
+                          <Input 
+                            type="number" 
+                            placeholder="Tarifa por hora" 
+                            {...field} 
+                            className="flex-1"
+                          />
+                          <SpeechInput 
+                            onResult={(transcript) => {
+                              const numericValue = transcript.replace(/[^0-9.,]/g, '');
+                              handleVoiceInput('hourlyRate', numericValue);
+                            }}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -230,7 +285,16 @@ const Workers: React.FC = () => {
                     <FormItem>
                       <FormLabel>Habilidades (separadas por coma)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Habilidades" {...field} />
+                        <div className="flex gap-2 items-end">
+                          <Input 
+                            placeholder="Habilidades" 
+                            {...field} 
+                            className="flex-1"
+                          />
+                          <SpeechInput 
+                            onResult={(transcript) => handleVoiceInput('skills', transcript)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -259,6 +323,7 @@ const Workers: React.FC = () => {
           </CardContent>
         </Card>
 
+        
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">

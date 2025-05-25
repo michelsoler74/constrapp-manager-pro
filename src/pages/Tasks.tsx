@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -39,8 +38,7 @@ const taskSchema = z.object({
   projectId: z.string().min(1, 'Proyecto es requerido'),
   title: z.string().min(1, 'Título de la tarea es requerido'),
   description: z.string().min(1, 'Descripción es requerida'),
-  assignedTo: z.string()
-    .transform(val => val ? [val] : []),
+  assignedTo: z.string().optional().default(''),
   status: z.enum(['pending', 'in-progress', 'completed']),
   priority: z.enum(['low', 'medium', 'high']),
   dueDate: z.string().min(1, 'Fecha límite es requerida'),
@@ -62,7 +60,7 @@ const Tasks: React.FC = () => {
       projectId: '',
       title: '',
       description: '',
-      assignedTo: [],
+      assignedTo: '',
       status: 'pending',
       priority: 'medium',
       dueDate: new Date().toISOString().split('T')[0],
@@ -100,8 +98,7 @@ const Tasks: React.FC = () => {
         projectId: data.projectId,
         title: data.title,
         description: data.description,
-        // Ensure assignedTo is always an array
-        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo : [data.assignedTo].filter(Boolean),
+        assignedTo: data.assignedTo ? [data.assignedTo] : [],
         status: data.status,
         priority: data.priority,
         dueDate: data.dueDate,
@@ -134,8 +131,7 @@ const Tasks: React.FC = () => {
       projectId: task.projectId,
       title: task.title,
       description: task.description,
-      // Convert assignedTo array to string for form - schema will transform it back
-      assignedTo: task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo[0] : "",
+      assignedTo: task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo[0] : '',
       status: task.status,
       priority: task.priority,
       dueDate: new Date(task.dueDate).toISOString().split('T')[0],
@@ -149,7 +145,9 @@ const Tasks: React.FC = () => {
   };
 
   const handleVoiceInput = (field: keyof TaskFormValues, transcript: string) => {
-    form.setValue(field, transcript);
+    const currentValue = form.getValues(field);
+    const newValue = currentValue ? `${currentValue} ${transcript}` : transcript;
+    form.setValue(field, newValue);
   };
 
   if (loading) {
@@ -188,7 +186,7 @@ const Tasks: React.FC = () => {
                       <FormLabel>Proyecto</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -215,10 +213,11 @@ const Tasks: React.FC = () => {
                     <FormItem>
                       <FormLabel>Título de la Tarea</FormLabel>
                       <FormControl>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-end">
                           <Input 
                             placeholder="Título" 
                             {...field} 
+                            className="flex-1"
                           />
                           <SpeechInput 
                             onResult={(transcript) => handleVoiceInput('title', transcript)}
@@ -237,7 +236,7 @@ const Tasks: React.FC = () => {
                     <FormItem>
                       <FormLabel>Descripción</FormLabel>
                       <FormControl>
-                        <div className="flex flex-col gap-2">
+                        <div className="space-y-2">
                           <Textarea 
                             placeholder="Descripción de la tarea" 
                             {...field} 
@@ -263,7 +262,7 @@ const Tasks: React.FC = () => {
                       <FormLabel>Asignado a</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={typeof field.value === 'string' ? field.value : ''}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -283,6 +282,8 @@ const Tasks: React.FC = () => {
                   )}
                 />
 
+                
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -292,7 +293,7 @@ const Tasks: React.FC = () => {
                         <FormLabel>Estado</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -317,7 +318,7 @@ const Tasks: React.FC = () => {
                         <FormLabel>Prioridad</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -395,6 +396,8 @@ const Tasks: React.FC = () => {
           </CardContent>
         </Card>
 
+        
+        
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">

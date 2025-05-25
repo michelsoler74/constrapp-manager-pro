@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Mic, MicOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Properly define SpeechRecognition types
 interface SpeechRecognitionEvent {
   results: {
     [index: number]: {
@@ -21,6 +20,7 @@ interface SpeechRecognitionInstance {
   continuous: boolean;
   interimResults: boolean;
   start: () => void;
+  stop: () => void;
   onstart: () => void;
   onresult: (event: SpeechRecognitionEvent) => void;
   onerror: (event: { error: string }) => void;
@@ -35,7 +35,7 @@ interface SpeechInputProps {
 
 const SpeechInput: React.FC<SpeechInputProps> = ({
   onResult,
-  placeholder = 'Hablar para ingresar texto',
+  placeholder = 'Hablar',
   disabled = false,
 }) => {
   const [isListening, setIsListening] = useState(false);
@@ -43,15 +43,15 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
 
   const startListening = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      toast.error('El reconocimiento de voz no está disponible en este navegador');
-      setError('El reconocimiento de voz no está disponible en este navegador');
+      const errorMsg = 'El reconocimiento de voz no está disponible en este navegador';
+      toast.error(errorMsg);
+      setError(errorMsg);
       return;
     }
 
     setIsListening(true);
     setError(null);
 
-    // Use appropriate type for SpeechRecognition
     const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognitionAPI() as SpeechRecognitionInstance;
     
@@ -60,41 +60,54 @@ const SpeechInput: React.FC<SpeechInputProps> = ({
     recognition.interimResults = false;
     
     recognition.onstart = () => {
+      console.log('Speech recognition started');
       toast.info('Escuchando...');
     };
     
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
+      console.log('Speech recognition result:', transcript);
       onResult(transcript);
-      toast.success('Texto capturado');
+      toast.success(`Texto capturado: "${transcript}"`);
+      setIsListening(false);
     };
     
     recognition.onerror = (event) => {
-      setError(`Error: ${event.error}`);
-      toast.error(`Error de reconocimiento: ${event.error}`);
+      console.error('Speech recognition error:', event.error);
+      const errorMsg = `Error de reconocimiento: ${event.error}`;
+      setError(errorMsg);
+      toast.error(errorMsg);
       setIsListening(false);
     };
     
     recognition.onend = () => {
+      console.log('Speech recognition ended');
       setIsListening(false);
     };
     
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      setIsListening(false);
+      toast.error('Error al iniciar el reconocimiento de voz');
+    }
   };
 
   return (
-    <div>
+    <div className="flex flex-col">
       <Button
         type="button"
         variant="outline"
+        size="sm"
         onClick={startListening}
         disabled={isListening || disabled}
-        className="flex items-center gap-2"
+        className="flex items-center gap-1 px-2 py-1 text-xs whitespace-nowrap"
       >
-        {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        {isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
         {isListening ? 'Escuchando...' : placeholder}
       </Button>
-      {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 };
