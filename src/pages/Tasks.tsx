@@ -55,6 +55,7 @@ const Tasks: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [taskMaterials, setTaskMaterials] = useState<Material[]>([]);
+  const [taskImages, setTaskImages] = useState<string[]>([]);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -110,6 +111,7 @@ const Tasks: React.FC = () => {
             new Date().toISOString()
           : new Date().toISOString(),
         materials: taskMaterials,
+        images: taskImages,
       };
 
       if (editing) {
@@ -123,6 +125,7 @@ const Tasks: React.FC = () => {
       form.reset();
       setEditing(null);
       setTaskMaterials([]);
+      setTaskImages([]);
       await loadData();
     } catch (error) {
       console.error("Error guardando tarea:", error);
@@ -133,6 +136,7 @@ const Tasks: React.FC = () => {
   const handleEdit = (task: Task) => {
     setEditing(task.id);
     setTaskMaterials(task.materials || []);
+    setTaskImages(task.images || []);
     form.reset({
       projectId: task.projectId,
       title: task.title,
@@ -148,6 +152,7 @@ const Tasks: React.FC = () => {
   const handleCancelEdit = () => {
     setEditing(null);
     setTaskMaterials([]);
+    setTaskImages([]);
     form.reset();
   };
 
@@ -172,6 +177,24 @@ const Tasks: React.FC = () => {
         toast.error("Error al eliminar la tarea");
       }
     }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const fileArray = Array.from(files);
+    Promise.all(
+      fileArray.map((file) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      })
+    ).then((images) => {
+      setTaskImages((prev) => [...prev, ...images]);
+    });
   };
 
   if (loading) {
@@ -320,6 +343,30 @@ const Tasks: React.FC = () => {
                   materials={taskMaterials}
                   onMaterialsChange={setTaskMaterials}
                 />
+
+                <div className="mb-4">
+                  <label className="text-sm font-medium block mb-1">
+                    Fotos de la tarea (opcional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                  />
+                  {taskImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {taskImages.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img}
+                          alt={`Tarea foto ${idx + 1}`}
+                          className="w-20 h-20 object-cover rounded border"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -573,6 +620,19 @@ const Tasks: React.FC = () => {
                               </li>
                             ))}
                           </ul>
+                        </div>
+                      )}
+
+                      {task.images && task.images.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {task.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`Tarea foto ${idx + 1}`}
+                              className="w-16 h-16 object-cover rounded border"
+                            />
+                          ))}
                         </div>
                       )}
                     </div>

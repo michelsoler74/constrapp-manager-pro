@@ -46,6 +46,7 @@ export interface Task {
   progress: number;
   createdAt: string;
   materials?: Material[];
+  images?: string[];
 }
 
 export interface Attendance {

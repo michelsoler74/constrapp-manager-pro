@@ -94,6 +94,39 @@ export class ProjectReportGenerator extends BasePDFGenerator {
           });
           yPosition = this.doc.lastAutoTable.finalY + 7;
         }
+        // Agregar imágenes de la tarea
+        if (task.images && task.images.length > 0) {
+          if (yPosition > 230) {
+            this.doc.addPage();
+            yPosition = 20;
+          }
+          this.doc.setFontSize(11);
+          this.doc.setTextColor(44, 62, 80);
+          this.doc.text(`Fotos de la tarea: ${task.title}`, 20, yPosition);
+          yPosition += 7;
+          let x = 20;
+          const maxPerRow = 6;
+          let count = 0;
+          task.images.forEach((img) => {
+            try {
+              this.doc.addImage(img, "JPEG", x, yPosition, 22, 22);
+            } catch (e) {
+              // Si la imagen no es JPEG, intenta PNG
+              try {
+                this.doc.addImage(img, "PNG", x, yPosition, 22, 22);
+              } catch (e2) {
+                // Si falla, ignora la imagen
+              }
+            }
+            x += 25;
+            count++;
+            if (count % maxPerRow === 0) {
+              x = 20;
+              yPosition += 25;
+            }
+          });
+          yPosition += 30;
+        }
       });
     }
 
